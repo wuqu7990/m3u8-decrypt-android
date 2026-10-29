@@ -16,6 +16,11 @@ import org.json.JSONObject
 
 class M3u8DecryptEngine {
 
+    companion object {
+        var activeTask: TaskInfo? = null
+        val tasks = ConcurrentHashMap<String, TaskInfo>()
+    }
+
     class TaskInfo(
         val id: String,
         val filename: String,
@@ -25,6 +30,7 @@ class M3u8DecryptEngine {
         var totalSlices: Int = 0,
         var downloadedSlices: Int = 0,
         var decryptedSlices: Int = 0,
+        var outputBytes: Long = 0L,
         var error: String? = null
     ) {
         fun toJson(): String {
@@ -37,12 +43,12 @@ class M3u8DecryptEngine {
                 .put("total_slices", totalSlices)
                 .put("downloaded_slices", downloadedSlices)
                 .put("decrypted_slices", decryptedSlices)
+                .put("output_bytes", outputBytes)
                 .put("error_message", error)
                 .toString()
         }
     }
 
-    private val tasks = ConcurrentHashMap<String, TaskInfo>()
     private val pool = Executors.newFixedThreadPool(8)
 
     fun getTask(id: String): TaskInfo? = tasks[id]
@@ -55,9 +61,16 @@ class M3u8DecryptEngine {
         folderUri: Uri?
     ): String {
         val taskId = UUID.randomUUID().toString().substring(0, 8)
-        val cleanName = filename.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+        var cleanName = filename.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+        for (ext in listOf(".ts", ".mp4", ".mkv", ".flv")) {
+            if (cleanName.lowercase().endsWith(ext)) {
+                cleanName = cleanName.substring(0, cleanName.length - ext.length)
+                break
+            }
+        }
         val task = TaskInfo(taskId, "$cleanName.ts")
         tasks[taskId] = task
+        activeTask = task
 
         pool.execute {
             runDecrypt(context, task, m3u8Url, keyB64, folderUri)
@@ -73,6 +86,7 @@ class M3u8DecryptEngine {
         folderUri: Uri?
     ) {
         val tempDir = File(context.cacheDir, task.id).apply { mkdirs() }
+        var savedUri: Uri? = null
         try {
             // 1. 初始化 AES Cipher
             val keyBytes = Base64.decode(keyB64, Base64.DEFAULT)
@@ -89,7 +103,7 @@ class M3u8DecryptEngine {
             val tsList = m3u8Text.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
             task.totalSlices = tsList.size
 
-            // 3. 并发下载分片
+            // 3. 并发下载分片 (0 -> 50%)
             task.stage = "下载分片"
             val downloadPool = Executors.newFixedThreadPool(8)
             val futures = tsList.mapIndexed { index, seg ->
@@ -110,36 +124,49 @@ class M3u8DecryptEngine {
             futures.forEach { it.get() }
             downloadPool.shutdown()
 
-            // 4. PES 级 AES 解密并输出到用户指定的 SAF 目录或外部存储
+            // 4. PES 级双流 AES 解密并合并 (50 -> 100%)
             task.stage = "解密合并"
             val outputStream: OutputStream = if (folderUri != null) {
                 val docFolder = DocumentFile.fromTreeUri(context, folderUri)
                 val newFile = docFolder?.createFile("video/mp2t", task.filename)
+                savedUri = newFile?.uri
                 context.contentResolver.openOutputStream(newFile!!.uri)!!
             } else {
-                // 回退到应用外部缓存文件
                 val outFile = File(context.getExternalFilesDir(null), task.filename)
+                savedUri = Uri.fromFile(outFile)
                 FileOutputStream(outFile)
             }
 
+            var totalBytes = 0L
             outputStream.use { out ->
                 for (i in 0 until task.totalSlices) {
                     val segFile = File(tempDir, String.format("%05d.ts", i))
                     val rawBytes = segFile.readBytes()
                     val decBytes = decryptPes(rawBytes, cipher, intArrayOf(0x100, 0x101))
                     out.write(decBytes)
+                    totalBytes += decBytes.size
 
                     task.decryptedSlices = i + 1
                     task.progress = 50.0 + (task.decryptedSlices.toDouble() / task.totalSlices) * 50.0
                 }
             }
 
+            task.outputBytes = totalBytes
             task.stage = "已完成"
             task.status = "finished"
             task.progress = 100.0
+
+            // 自动存入历史记录
+            DownloadHistoryManager.addRecord(
+                context = context,
+                filename = task.filename,
+                sizeBytes = totalBytes,
+                uriString = savedUri?.toString()
+            )
+
         } catch (e: Exception) {
             task.status = "failed"
-            task.stage = "失败"
+            task.stage = "执行失败"
             task.error = e.message
         } finally {
             tempDir.deleteRecursively()

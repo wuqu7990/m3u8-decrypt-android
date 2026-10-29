@@ -3,30 +3,31 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#090D16"
-    android:padding="16dp">
+    android:padding="14dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- 顶部标题 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🎬 M3U8 视频解密助手"
             android:textColor="#FFFFFF"
-            android:textSize="20sp"
+            android:textSize="19sp"
             android:textStyle="bold"
             android:layout_marginBottom="12dp" />
 
-        <!-- 服务控制卡片 -->
+        <!-- 服务状态与控制卡片 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#131C2E"
             android:orientation="vertical"
-            android:padding="14dp"
-            android:layout_marginBottom="14dp">
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
 
             <TextView
                 android:id="@+id/tvStatus"
@@ -34,7 +35,7 @@
                 android:layout_height="wrap_content"
                 android:text="🔴 监听服务已停止"
                 android:textColor="#34D399"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
 
@@ -42,26 +43,26 @@
                 android:id="@+id/btnToggleService"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="▶ 启动后台服务"
+                android:text="▶ 启动后台监听服务"
                 android:backgroundTint="#38BDF8"
                 android:textColor="#090D16"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- 目录选择卡片 -->
+        <!-- 手机文件管理保存目录卡片 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#131C2E"
             android:orientation="vertical"
-            android:padding="14dp"
-            android:layout_marginBottom="14dp">
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
 
             <TextView
                 android:id="@+id/tvFolder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="未选择保存目录 (默认应用私有缓存)"
+                android:text="未选择保存目录 (默认应用缓存)"
                 android:textColor="#94A3B8"
                 android:textSize="12sp"
                 android:layout_marginBottom="8dp" />
@@ -75,13 +76,88 @@
                 android:textColor="#38BDF8" />
         </LinearLayout>
 
-        <!-- 本地测试表单 -->
+        <!-- 当前下载进度展示卡片 -->
+        <LinearLayout
+            android:id="@+id/cardProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#131C2E"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvTaskTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="正在处理: 视频"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:id="@+id/tvCurrentStage"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="正在下载分片..."
+                    android:textColor="#38BDF8"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvCurrentPercent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0%"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/pbProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:max="100"
+                android:progress="0"
+                android:progressTint="#38BDF8"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tvSlicesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="分片进度: 0 / 0"
+                android:textColor="#94A3B8"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- 手动输入/发起区域 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#131C2E"
             android:orientation="vertical"
-            android:padding="14dp">
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="手动输入参数 (油猴脚本自动抓取可留空)"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:layout_marginBottom="6dp" />
 
             <EditText
                 android:id="@+id/etM3u8"
@@ -90,8 +166,8 @@
                 android:hint="M3U8 播放列表 URL"
                 android:textColor="#FFFFFF"
                 android:textColorHint="#64748B"
-                android:textSize="13sp"
-                android:layout_marginBottom="8dp" />
+                android:textSize="12sp"
+                android:layout_marginBottom="6dp" />
 
             <EditText
                 android:id="@+id/etKey"
@@ -100,18 +176,18 @@
                 android:hint="Base64 解密密钥 (Key)"
                 android:textColor="#FFFFFF"
                 android:textColorHint="#64748B"
-                android:textSize="13sp"
-                android:layout_marginBottom="8dp" />
+                android:textSize="12sp"
+                android:layout_marginBottom="6dp" />
 
             <EditText
                 android:id="@+id/etName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="视频文件名称 (可选)"
+                android:hint="自定义文件名 (例如: 1.1 PLC前世今生)"
                 android:textColor="#FFFFFF"
                 android:textColorHint="#64748B"
-                android:textSize="13sp"
-                android:layout_marginBottom="12dp" />
+                android:textSize="12sp"
+                android:layout_marginBottom="10dp" />
 
             <Button
                 android:id="@+id/btnStartLocal"
@@ -128,7 +204,60 @@
                 android:layout_height="wrap_content"
                 android:textColor="#94A3B8"
                 android:textSize="11sp"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- 下载历史记录卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#131C2E"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="📁 下载历史记录"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnClearHistory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="清空"
+                    android:textColor="#64748B"
+                    android:textSize="12sp"
+                    android:padding="4dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llHistoryContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <!-- 动态添加历史项目 -->
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvEmptyHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="暂无下载记录"
+                android:textColor="#64748B"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:padding="16dp" />
         </LinearLayout>
 
     </LinearLayout>
