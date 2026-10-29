@@ -68,7 +68,7 @@ class M3u8DecryptEngine {
                 break
             }
         }
-        val task = TaskInfo(taskId, "$cleanName.ts")
+        val task = TaskInfo(taskId, "$cleanName.mp4")
         tasks[taskId] = task
         activeTask = task
 
@@ -124,21 +124,11 @@ class M3u8DecryptEngine {
             futures.forEach { it.get() }
             downloadPool.shutdown()
 
-            // 4. PES 级双流 AES 解密并合并 (50 -> 100%)
-            task.stage = "解密合并"
-            val outputStream: OutputStream = if (folderUri != null) {
-                val docFolder = DocumentFile.fromTreeUri(context, folderUri)
-                val newFile = docFolder?.createFile("video/mp2t", task.filename)
-                savedUri = newFile?.uri
-                context.contentResolver.openOutputStream(newFile!!.uri)!!
-            } else {
-                val outFile = File(context.getExternalFilesDir(null), task.filename)
-                savedUri = Uri.fromFile(outFile)
-                FileOutputStream(outFile)
-            }
-
+            // 4. PES 级双流 AES 解密并合并为临时 TS (50 -> 85%)
+            task.stage = "解密切片"
+            val tempDecTs = File(tempDir, "merged_decrypted.ts")
             var totalBytes = 0L
-            outputStream.use { out ->
+            tempDecTs.outputStream().use { out ->
                 for (i in 0 until task.totalSlices) {
                     val segFile = File(tempDir, String.format("%05d.ts", i))
                     val rawBytes = segFile.readBytes()
@@ -147,11 +137,35 @@ class M3u8DecryptEngine {
                     totalBytes += decBytes.size
 
                     task.decryptedSlices = i + 1
-                    task.progress = 50.0 + (task.decryptedSlices.toDouble() / task.totalSlices) * 50.0
+                    task.progress = 50.0 + (task.decryptedSlices.toDouble() / task.totalSlices) * 35.0
                 }
             }
 
-            task.outputBytes = totalBytes
+            // 5. 自动无损转换为标准 MP4 (解决手机播放器无法快进、没有进度条的问题) (85 -> 100%)
+            task.stage = "封装 MP4 (生成进度条)"
+            task.progress = 90.0
+            val tempMp4 = File(tempDir, task.filename)
+            val converted = TsToMp4Converter.convert(tempDecTs, tempMp4)
+
+            val finalFile = if (converted && tempMp4.exists() && tempMp4.length() > 0) tempMp4 else tempDecTs
+            val mimeType = if (finalFile == tempMp4) "video/mp4" else "video/mp2t"
+            val outFilename = if (finalFile == tempMp4) task.filename else task.filename.replace(".mp4", ".ts")
+
+            // 写入用户所选目录
+            if (folderUri != null) {
+                val docFolder = DocumentFile.fromTreeUri(context, folderUri)
+                val newFile = docFolder?.createFile(mimeType, outFilename)
+                savedUri = newFile?.uri
+                context.contentResolver.openOutputStream(newFile!!.uri)!!.use { out ->
+                    finalFile.inputStream().use { input -> input.copyTo(out) }
+                }
+            } else {
+                val outFile = File(context.getExternalFilesDir(null), outFilename)
+                savedUri = Uri.fromFile(outFile)
+                finalFile.copyTo(outFile, overwrite = true)
+            }
+
+            task.outputBytes = finalFile.length()
             task.stage = "已完成"
             task.status = "finished"
             task.progress = 100.0
@@ -159,8 +173,8 @@ class M3u8DecryptEngine {
             // 自动存入历史记录
             DownloadHistoryManager.addRecord(
                 context = context,
-                filename = task.filename,
-                sizeBytes = totalBytes,
+                filename = outFilename,
+                sizeBytes = finalFile.length(),
                 uriString = savedUri?.toString()
             )
 
