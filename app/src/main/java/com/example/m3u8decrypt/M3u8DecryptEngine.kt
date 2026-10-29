@@ -62,14 +62,17 @@ class M3u8DecryptEngine {
         chapter: String? = null
     ): String {
         val taskId = UUID.randomUUID().toString().substring(0, 8)
-        var cleanName = filename.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+        var cleanName = filename.replace(Regex("[\\\\/:*?\"<>|\\uE000-\\uF8FF\\uD800-\\uDFFF\\u0000-\\u001F]"), "_").trim()
         for (ext in listOf(".ts", ".mp4", ".mkv", ".flv")) {
             if (cleanName.lowercase().endsWith(ext)) {
                 cleanName = cleanName.substring(0, cleanName.length - ext.length)
                 break
             }
         }
-        val cleanChapter = chapter?.replace(Regex("[\\\\/:*?\"<>|]"), "_")?.trim()?.ifEmpty { null }
+        val cleanChapter = chapter?.replace(Regex("[\\\\/:*?\"<>|\\uE000-\\uF8FF\\uD800-\\uDFFF\\u0000-\\u001F]"), "_")
+            ?.trim()
+            ?.trim('_')
+            ?.ifEmpty { null }
         val task = TaskInfo(taskId, "$cleanName.mp4")
         tasks[taskId] = task
         activeTask = task
