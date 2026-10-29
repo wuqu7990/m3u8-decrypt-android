@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#090D16"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎬 M3U8 视频解密助手"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <!-- 服务控制卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#131C2E"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp">
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔴 监听服务已停止"
+                android:textColor="#34D399"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <Button
+                android:id="@+id/btnToggleService"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="▶ 启动后台服务"
+                android:backgroundTint="#38BDF8"
+                android:textColor="#090D16"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- 目录选择卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#131C2E"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp">
+
+            <TextView
+                android:id="@+id/tvFolder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="未选择保存目录 (默认应用私有缓存)"
+                android:textColor="#94A3B8"
+                android:textSize="12sp"
+                android:layout_marginBottom="8dp" />
+
+            <Button
+                android:id="@+id/btnSelectFolder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📂 打开手机文件管理选择保存文件夹"
+                android:backgroundTint="#1E293B"
+                android:textColor="#38BDF8" />
+        </LinearLayout>
+
+        <!-- 本地测试表单 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#131C2E"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <EditText
+                android:id="@+id/etM3u8"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="M3U8 播放列表 URL"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#64748B"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/etKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Base64 解密密钥 (Key)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#64748B"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/etName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="视频文件名称 (可选)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#64748B"
+                android:textSize="13sp"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/btnStartLocal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⚡ 开始下载与解密"
+                android:backgroundTint="#10B981"
+                android:textColor="#090D16"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:layout_marginTop="10dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
