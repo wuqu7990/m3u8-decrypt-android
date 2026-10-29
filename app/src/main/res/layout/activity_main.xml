@@ -183,7 +183,17 @@
                 android:id="@+id/etName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="自定义文件名 (例如: 1.1 PLC前世今生)"
+                android:hint="视频文件名 (例如: 1.6 汇川中大型PLC主要功能简介)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#64748B"
+                android:textSize="12sp"
+                android:layout_marginBottom="6dp" />
+
+            <EditText
+                android:id="@+id/etChapter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="所属章节文件夹 (可选，例如: 第1章 PLC基础篇)"
                 android:textColor="#FFFFFF"
                 android:textColorHint="#64748B"
                 android:textSize="12sp"

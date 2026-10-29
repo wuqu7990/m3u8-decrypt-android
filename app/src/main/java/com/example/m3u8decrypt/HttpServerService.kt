@@ -131,8 +131,9 @@ class HttpServerService : Service() {
                 val m3u8Url = json.getString("m3u8_url")
                 val keyB64 = json.getString("key_b64")
                 val filename = json.optString("filename", "video_${System.currentTimeMillis()}")
+                val chapter = json.optString("chapter", "").trim().ifEmpty { null }
 
-                val taskId = engine.startTask(this, m3u8Url, keyB64, filename, selectedFolderUri)
+                val taskId = engine.startTask(this, m3u8Url, keyB64, filename, selectedFolderUri, chapter)
 
                 val resp = JSONObject().put("task_id", taskId).toString()
                 output.write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n$corsHeaders\r\n$resp".toByteArray())

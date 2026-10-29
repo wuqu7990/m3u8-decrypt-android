@@ -21,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etM3u8: EditText
     private lateinit var etKey: EditText
     private lateinit var etName: EditText
+    private lateinit var etChapter: EditText
     private lateinit var btnStartLocal: Button
     private lateinit var tvLog: TextView
 
@@ -69,6 +70,7 @@ class MainActivity : AppCompatActivity() {
         etM3u8 = findViewById(R.id.etM3u8)
         etKey = findViewById(R.id.etKey)
         etName = findViewById(R.id.etName)
+        etChapter = findViewById(R.id.etChapter)
         btnStartLocal = findViewById(R.id.btnStartLocal)
         tvLog = findViewById(R.id.tvLog)
 
@@ -118,6 +120,7 @@ class MainActivity : AppCompatActivity() {
             val url = etM3u8.text.toString().trim()
             val key = etKey.text.toString().trim()
             val name = etName.text.toString().trim().ifEmpty { "video_${System.currentTimeMillis()}" }
+            val chapter = etChapter.text.toString().trim().ifEmpty { null }
 
             if (url.isEmpty() || key.isEmpty()) {
                 Toast.makeText(this, "请填写 M3U8 地址和 Key", Toast.LENGTH_SHORT).show()
@@ -129,7 +132,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             val engine = M3u8DecryptEngine()
-            val taskId = engine.startTask(this, url, key, name, HttpServerService.selectedFolderUri)
+            val taskId = engine.startTask(this, url, key, name, HttpServerService.selectedFolderUri, chapter)
             tvLog.text = "任务已提交 (ID: $taskId)，正在后台下载与 PES 解密..."
         }
 

@@ -58,7 +58,8 @@ class M3u8DecryptEngine {
         m3u8Url: String,
         keyB64: String,
         filename: String,
-        folderUri: Uri?
+        folderUri: Uri?,
+        chapter: String? = null
     ): String {
         val taskId = UUID.randomUUID().toString().substring(0, 8)
         var cleanName = filename.replace(Regex("[\\\\/:*?\"<>|]"), "_")
@@ -68,12 +69,13 @@ class M3u8DecryptEngine {
                 break
             }
         }
+        val cleanChapter = chapter?.replace(Regex("[\\\\/:*?\"<>|]"), "_")?.trim()?.ifEmpty { null }
         val task = TaskInfo(taskId, "$cleanName.mp4")
         tasks[taskId] = task
         activeTask = task
 
         pool.execute {
-            runDecrypt(context, task, m3u8Url, keyB64, folderUri)
+            runDecrypt(context, task, m3u8Url, keyB64, folderUri, cleanChapter)
         }
         return taskId
     }
@@ -83,7 +85,8 @@ class M3u8DecryptEngine {
         task: TaskInfo,
         m3u8Url: String,
         keyB64: String,
-        folderUri: Uri?
+        folderUri: Uri?,
+        chapter: String? = null
     ) {
         val tempDir = File(context.cacheDir, task.id).apply { mkdirs() }
         var savedUri: Uri? = null
@@ -151,16 +154,26 @@ class M3u8DecryptEngine {
             val mimeType = if (finalFile == tempMp4) "video/mp4" else "video/mp2t"
             val outFilename = if (finalFile == tempMp4) task.filename else task.filename.replace(".mp4", ".ts")
 
-            // 写入用户所选目录
+            // 写入用户所选目录（如果指定了章节，则自动创建并写入章节子文件夹）
             if (folderUri != null) {
-                val docFolder = DocumentFile.fromTreeUri(context, folderUri)
+                var docFolder = DocumentFile.fromTreeUri(context, folderUri)
+                if (!chapter.isNullOrEmpty() && docFolder != null) {
+                    val subFolder = docFolder.findFile(chapter) ?: docFolder.createDirectory(chapter)
+                    if (subFolder != null) {
+                        docFolder = subFolder
+                    }
+                }
                 val newFile = docFolder?.createFile(mimeType, outFilename)
                 savedUri = newFile?.uri
                 context.contentResolver.openOutputStream(newFile!!.uri)!!.use { out ->
                     finalFile.inputStream().use { input -> input.copyTo(out) }
                 }
             } else {
-                val outFile = File(context.getExternalFilesDir(null), outFilename)
+                var targetDir = context.getExternalFilesDir(null)
+                if (!chapter.isNullOrEmpty() && targetDir != null) {
+                    targetDir = File(targetDir, chapter).apply { mkdirs() }
+                }
+                val outFile = File(targetDir, outFilename)
                 savedUri = Uri.fromFile(outFile)
                 finalFile.copyTo(outFile, overwrite = true)
             }
@@ -170,10 +183,11 @@ class M3u8DecryptEngine {
             task.status = "finished"
             task.progress = 100.0
 
+            val recordName = if (!chapter.isNullOrEmpty()) "$chapter / $outFilename" else outFilename
             // 自动存入历史记录
             DownloadHistoryManager.addRecord(
                 context = context,
-                filename = outFilename,
+                filename = recordName,
                 sizeBytes = finalFile.length(),
                 uriString = savedUri?.toString()
             )
