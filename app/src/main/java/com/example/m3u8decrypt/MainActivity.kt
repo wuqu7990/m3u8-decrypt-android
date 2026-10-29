@@ -96,13 +96,22 @@ class MainActivity : AppCompatActivity() {
             folderPickerLauncher.launch(null)
         }
 
+        // 监听后台服务真实运行状态变更
+        HttpServerService.onStatusChanged = { running ->
+            updateUiState()
+        }
+
         btnToggleService.setOnClickListener {
+            btnToggleService.isEnabled = false
             if (HttpServerService.isRunning) {
+                btnToggleService.text = "⏳ 正在停止服务..."
                 stopHttpService()
             } else {
+                btnToggleService.text = "⏳ 正在启动服务..."
                 startHttpService()
             }
-            updateUiState()
+            // 500ms 后重新启用按钮防止连击
+            handler.postDelayed({ btnToggleService.isEnabled = true }, 600)
         }
 
         btnStartLocal.setOnClickListener {

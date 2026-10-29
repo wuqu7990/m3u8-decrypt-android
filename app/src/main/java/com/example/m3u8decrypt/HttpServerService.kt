@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import java.io.*
 import java.net.ServerSocket
@@ -20,9 +22,23 @@ class HttpServerService : Service() {
         const val PORT = 8765
         const val ACTION_STOP = "com.example.m3u8decrypt.ACTION_STOP"
         const val CHANNEL_ID = "m3u8_decrypt_service"
+        
+        @Volatile
         var isRunning = false
+            private set
+            
         var selectedFolderUri: Uri? = null
         var currentLog = "服务已启动，监听端口: $PORT"
+
+        private val mainHandler = Handler(Looper.getMainLooper())
+        var onStatusChanged: ((Boolean) -> Unit)? = null
+
+        fun notifyStatus(running: Boolean) {
+            isRunning = running
+            mainHandler.post {
+                onStatusChanged?.invoke(running)
+            }
+        }
     }
 
     private var serverSocket: ServerSocket? = null
@@ -39,7 +55,12 @@ class HttpServerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
             stopServer()
-            stopForeground(true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
             stopSelf()
             return START_NOT_STICKY
         }
@@ -48,22 +69,24 @@ class HttpServerService : Service() {
         startForeground(1001, notification)
 
         startServer()
-        isRunning = true
         return START_STICKY
     }
 
     private fun startServer() {
-        if (serverSocket != null) return
+        if (serverSocket != null && !serverSocket!!.isClosed) return
         threadPool.execute {
             try {
                 serverSocket = ServerSocket(PORT)
+                notifyStatus(true)
                 currentLog = "HTTP 服务正在 127.0.0.1:$PORT 监听油猴请求..."
-                while (!serverSocket!!.isClosed) {
+                while (serverSocket != null && !serverSocket!!.isClosed) {
                     val client = serverSocket!!.accept()
                     threadPool.execute { handleClient(client) }
                 }
             } catch (e: Exception) {
-                currentLog = "服务停止: ${e.message}"
+                currentLog = "服务已退出: ${e.message}"
+            } finally {
+                notifyStatus(false)
             }
         }
     }
@@ -79,7 +102,6 @@ class HttpServerService : Service() {
             val method = parts[0]
             val pathWithQuery = parts[1]
 
-            // 读取 Headers
             var contentLength = 0
             var headerLine: String?
             while (reader.readLine().also { headerLine = it } != null) {
@@ -89,7 +111,6 @@ class HttpServerService : Service() {
                 }
             }
 
-            // CORS 响应头
             val corsHeaders = "Access-Control-Allow-Origin: *\r\n" +
                     "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n" +
                     "Access-Control-Allow-Headers: Content-Type\r\n"
@@ -133,11 +154,11 @@ class HttpServerService : Service() {
     }
 
     private fun stopServer() {
+        notifyStatus(false)
         try {
             serverSocket?.close()
-            serverSocket = null
-            isRunning = false
         } catch (e: Exception) {}
+        serverSocket = null
     }
 
     private fun createNotificationChannel() {
