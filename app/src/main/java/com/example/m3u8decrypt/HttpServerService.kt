@@ -145,7 +145,7 @@ class HttpServerService : Service() {
                 output.write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n$corsHeaders\r\n$resp".toByteArray())
                 output.flush()
             } else if (method == "GET" && (pathWithQuery == "/api/history" || pathWithQuery.startsWith("/api/history?"))) {
-                val list = DownloadHistoryManager.getRecords(this)
+                val list = DownloadHistoryManager.getRecords(this, selectedFolderUri)
                 val arr = org.json.JSONArray()
                 for (item in list) {
                     val obj = JSONObject()

@@ -171,7 +171,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadHistoryUi() {
         llHistoryContainer.removeAllViews()
-        val records = DownloadHistoryManager.getRecords(this)
+        val records = DownloadHistoryManager.getRecords(this, HttpServerService.selectedFolderUri)
         if (records.isEmpty()) {
             tvEmptyHistory.visibility = View.VISIBLE
         } else {
