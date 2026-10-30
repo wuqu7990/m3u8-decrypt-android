@@ -144,6 +144,21 @@ class HttpServerService : Service() {
                 val resp = task?.toJson() ?: JSONObject().put("error", "Not Found").toString()
                 output.write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n$corsHeaders\r\n$resp".toByteArray())
                 output.flush()
+            } else if (method == "GET" && (pathWithQuery == "/api/history" || pathWithQuery.startsWith("/api/history?"))) {
+                val list = DownloadHistoryManager.getRecords(this)
+                val arr = org.json.JSONArray()
+                for (item in list) {
+                    val obj = JSONObject()
+                        .put("id", item.id)
+                        .put("filename", item.filename)
+                        .put("size", item.sizeBytes)
+                        .put("time", item.timeStr)
+                        .put("size_str", item.sizeMbStr())
+                    arr.put(obj)
+                }
+                val resp = arr.toString()
+                output.write("HTTP/1.1 200 OK\r\nContent-Type: application/json; charset=utf-8\r\n$corsHeaders\r\n$resp".toByteArray())
+                output.flush()
             } else {
                 output.write("HTTP/1.1 404 Not Found\r\n$corsHeaders\r\n\r\n".toByteArray())
                 output.flush()
